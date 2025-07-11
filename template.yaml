@@ -1,0 +1,303 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: API para mantenimiento de empresas y sedes
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 512
+    Environment:
+      Variables:
+        EMPRESAS_TABLE: !Ref EmpresasTable
+        SEDES_TABLE: !Ref SedesTable
+        REGION: !Ref AWS::Region
+
+Resources:
+  # Tablas DynamoDB
+  EmpresasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-empresas"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: ruc
+          AttributeType: S
+        - AttributeName: nombre
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: RUC-index
+          KeySchema:
+            - AttributeName: ruc
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+        - IndexName: Nombre-index
+          KeySchema:
+            - AttributeName: nombre
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  SedesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-sedes"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: empresaId
+          AttributeType: S
+        - AttributeName: isPrincipal
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmpresaId-index
+          KeySchema:
+            - AttributeName: empresaId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+        - IndexName: EmpresaId-IsPrincipal-index
+          KeySchema:
+            - AttributeName: empresaId
+              KeyType: HASH
+            - AttributeName: isPrincipal
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  # Funciones Lambda para Empresas
+  CreateEmpresaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: empresas/create.handler
+      Events:
+        CreateEmpresa:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /empresas
+            Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EmpresasTable
+
+  GetEmpresaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: empresas/get.handler
+      Events:
+        GetEmpresa:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /empresas/{id}
+            Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref EmpresasTable
+
+  ListEmpresasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: empresas/list.handler
+      Events:
+        ListEmpresas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /empresas
+            Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref EmpresasTable
+
+  UpdateEmpresaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: empresas/update.handler
+      Events:
+        UpdateEmpresa:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /empresas/{id}
+            Method: put
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EmpresasTable
+
+  DeleteEmpresaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: empresas/delete.handler
+      Events:
+        DeleteEmpresa:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /empresas/{id}
+            Method: delete
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EmpresasTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SedesTable
+
+  # Funciones Lambda para Sedes
+  CreateSedeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: sedes/create.handler
+      Events:
+        CreateSede:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /sedes
+            Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SedesTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref EmpresasTable
+
+  GetSedeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: sedes/get.handler
+      Events:
+        GetSede:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /sedes/{id}
+            Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SedesTable
+
+  ListSedesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: sedes/list.handler
+      Events:
+        ListSedes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /sedes
+            Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SedesTable
+
+  ListSedesByEmpresaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: sedes/listByEmpresa.handler
+      Events:
+        ListSedesByEmpresa:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /empresas/{id}/sedes
+            Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SedesTable
+
+  UpdateSedeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: sedes/update.handler
+      Events:
+        UpdateSede:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /sedes/{id}
+            Method: put
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SedesTable
+
+  DeleteSedeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: sedes/delete.handler
+      Events:
+        DeleteSede:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /sedes/{id}
+            Method: delete
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SedesTable
+
+Outputs:
+  ApiGatewayEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiEndpoint"
+  
+  EmpresasTableName:
+    Description: "Nombre de la tabla de empresas"
+    Value: !Ref EmpresasTable
+    Export:
+      Name: !Sub "${AWS::StackName}-EmpresasTable"
+  
+  SedesTableName:
+    Description: "Nombre de la tabla de sedes"
+    Value: !Ref SedesTable
+    Export:
+      Name: !Sub "${AWS::StackName}-SedesTable"
