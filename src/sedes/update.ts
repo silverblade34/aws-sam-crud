@@ -84,18 +84,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       expressionAttributeValues[':direccion'] = data.direccion;
     }
 
-    if (data.telefono !== undefined) {
-      updateExpressions.push('#telefono = :telefono');
-      expressionAttributeNames['#telefono'] = 'telefono';
-      expressionAttributeValues[':telefono'] = data.telefono;
-    }
-
-    if (data.email !== undefined) {
-      updateExpressions.push('#email = :email');
-      expressionAttributeNames['#email'] = 'email';
-      expressionAttributeValues[':email'] = data.email;
-    }
-
     if (data.isPrincipal !== undefined) {
       updateExpressions.push('#isPrincipal = :isPrincipal');
       expressionAttributeNames['#isPrincipal'] = 'isPrincipal';

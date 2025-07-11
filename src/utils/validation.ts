@@ -72,10 +72,6 @@ export const validateCreateSede = (data: CreateSedeRequest): string[] => {
     errors.push('Dirección es requerida y debe tener al menos 5 caracteres');
   }
 
-  if (data.email && !validateEmail(data.email)) {
-    errors.push('Email debe tener un formato válido');
-  }
-
   return errors;
 };
 
@@ -89,10 +85,6 @@ export const validateUpdateSede = (data: UpdateSedeRequest): string[] => {
   if (data.direccion !== undefined && data.direccion.trim().length < 5) {
     errors.push('Dirección debe tener al menos 5 caracteres');
   }
-
-  if (data.email !== undefined && data.email !== '' && !validateEmail(data.email)) {
-    errors.push('Email debe tener un formato válido');
-  }
-
+  
   return errors;
 };

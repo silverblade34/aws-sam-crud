@@ -16,8 +16,6 @@ export interface Sede {
   empresaId: string;
   nombre: string;
   direccion: string;
-  telefono?: string;
-  email?: string;
   isPrincipal: boolean;
   activo: boolean;
   fechaCreacion: string;
@@ -46,16 +44,12 @@ export interface CreateSedeRequest {
   empresaId: string;
   nombre: string;
   direccion: string;
-  telefono?: string;
-  email?: string;
   isPrincipal?: boolean;
 }
 
 export interface UpdateSedeRequest {
   nombre?: string;
   direccion?: string;
-  telefono?: string;
-  email?: string;
   isPrincipal?: boolean;
   activo?: boolean;
 }

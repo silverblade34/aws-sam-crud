@@ -69,8 +69,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       empresaId: data.empresaId,
       nombre: data.nombre,
       direccion: data.direccion,
-      telefono: data.telefono,
-      email: data.email,
       isPrincipal: data.isPrincipal || false,
       activo: true,
       fechaCreacion: now,
