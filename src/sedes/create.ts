@@ -13,7 +13,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     const data: CreateSedeRequest = JSON.parse(event.body);
-    
     const validationErrors = validateCreateSede(data);
     if (validationErrors.length > 0) {
       return badRequestResponse(validationErrors.join(', '));
@@ -31,25 +30,25 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     if (data.isPrincipal) {
-      const existingPrincipal = await dynamoDbClient.send(
+      const existingSedesQuery = await dynamoDbClient.send(
         new QueryCommand({
           TableName: SEDES_TABLE,
-          IndexName: 'EmpresaId-IsPrincipal-index',
-          KeyConditionExpression: 'empresaId = :empresaId AND isPrincipal = :isPrincipal',
-          FilterExpression: 'activo = :activo',
+          IndexName: 'EmpresaId-index',
+          KeyConditionExpression: 'empresaId = :empresaId',
+          FilterExpression: 'isPrincipal = :isPrincipal AND activo = :activo',
           ExpressionAttributeValues: {
             ':empresaId': data.empresaId,
-            ':isPrincipal': 'true',
+            ':isPrincipal': true,
             ':activo': true,
           },
         })
       );
 
-      if (existingPrincipal.Items && existingPrincipal.Items.length > 0) {
+      if (existingSedesQuery.Items && existingSedesQuery.Items.length > 0) {
         await dynamoDbClient.send(
           new UpdateCommand({
             TableName: SEDES_TABLE,
-            Key: { id: existingPrincipal.Items[0].id },
+            Key: { id: existingSedesQuery.Items[0].id },
             UpdateExpression: 'SET isPrincipal = :isPrincipal, #fechaActualizacion = :fechaActualizacion',
             ExpressionAttributeNames: {
               '#fechaActualizacion': 'fechaActualizacion',
@@ -85,6 +84,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     return successResponse(newSede, 'Sede creada exitosamente');
   } catch (error) {
     console.error('Error creating sede:', error);
-    return internalErrorResponse('Error al crear la sede');
+    return internalErrorResponse('Error al crear la sede: ' + error);
   }
 };

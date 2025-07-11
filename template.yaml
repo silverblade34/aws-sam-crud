@@ -61,8 +61,6 @@ Resources:
           AttributeType: S
         - AttributeName: empresaId
           AttributeType: S
-        - AttributeName: isPrincipal
-          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
@@ -76,22 +74,10 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
-        - IndexName: EmpresaId-IsPrincipal-index
-          KeySchema:
-            - AttributeName: empresaId
-              KeyType: HASH
-            - AttributeName: isPrincipal
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-          ProvisionedThroughput:
-            ReadCapacityUnits: 5
-            WriteCapacityUnits: 5
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  # API Gateway
   ApiGateway:
     Type: AWS::Serverless::Api
     Properties:
@@ -101,7 +87,6 @@ Resources:
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
 
-  # Funciones Lambda para Empresas
   CreateEmpresaFunction:
     Type: AWS::Serverless::Function
     Properties:
